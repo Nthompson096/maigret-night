@@ -263,6 +263,9 @@ class MaigretGUI(QMainWindow):
         layout.addWidget(self.output_area)
 
     def run_maigret(self):
+        # Clear the output area before starting a new search
+        self.output_area.clear()
+
         # Construct the command for running Maigret
         command = f"maigret {self.username_input.text()}"
 
