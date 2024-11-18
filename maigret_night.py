@@ -1,8 +1,9 @@
 import sys
 import subprocess
+import json
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                              QLabel, QLineEdit, QPushButton, QTextEdit, QCheckBox, 
-                             QGroupBox, QFormLayout, QSpinBox, QComboBox, QTabWidget, QToolButton)
+                             QGroupBox, QFormLayout, QSpinBox, QComboBox, QTabWidget, QToolButton,QFileDialog, QMessageBox)
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 
 # Worker class that handles executing the Maigret command in a separate thread
@@ -52,6 +53,121 @@ class MaigretGUI(QMainWindow):
 
         # Buttons and output area
         self.create_buttons(layout)
+
+        # Add Save and Load actions
+        self.create_save_load_actions(layout)
+
+    def create_save_load_actions(self, layout):
+        save_load_layout = QHBoxLayout()
+
+        self.save_button = QPushButton("Save Settings")
+        self.save_button.clicked.connect(self.save_settings_dialog)
+        save_load_layout.addWidget(self.save_button)
+
+        self.load_button = QPushButton("Load Settings")
+        self.load_button.clicked.connect(self.load_settings_dialog)
+        save_load_layout.addWidget(self.load_button)
+
+        layout.addLayout(save_load_layout)
+
+    def save_settings_dialog(self):
+        # Open a save file dialog
+        file_path, _ = QFileDialog.getSaveFileName(self, "Save Settings", "", "JSON Files (*.json);;All Files (*)")
+
+        if file_path:
+            self.save_settings(file_path)
+
+    def save_settings(self, file_path):
+        settings = {
+            'username': self.username_input.text(),
+            'timeout': self.timeout_spinbox.value(),
+            'retries': self.retries_spinbox.value(),
+            'max_connections': self.max_connections_spinbox.value(),
+            'no_recursion': self.no_recursion_checkbox.isChecked(),
+            'no_extracting': self.no_extracting_checkbox.isChecked(),
+            'id_type': self.id_type_combobox.currentText(),
+            'permute': self.permute_checkbox.isChecked(),
+            'proxy': self.proxy_input.text(),
+            'tor_proxy': self.tor_proxy_input.text(),
+            'i2p_proxy': self.i2p_proxy_input.text(),
+            'all_sites': self.all_sites_checkbox.isChecked(),
+            'top_sites': self.top_sites_checkbox.isChecked(),
+            'top_sites_count': self.top_sites_input.value(),
+            'tags': self.tags_input.text(),
+            'site': self.site_input.text(),
+            'use_disabled_sites': self.use_disabled_sites_checkbox.isChecked(),
+            'parse_url': self.parse_url_input.text(),
+            'submit_url': self.submit_url_input.text(),
+            'self_check': self.self_check_checkbox.isChecked(),
+            'stats': self.stats_checkbox.isChecked(),
+            'csv': self.csv_checkbox.isChecked(),
+            'pdf': self.pdf_checkbox.isChecked(),
+            'txt': self.txt_checkbox.isChecked(),
+            'html': self.html_checkbox.isChecked(),
+            'report_sorting': self.report_sorting_checkbox.isChecked(),
+            'report_sorting_type': self.report_sorting_combobox.currentText(),
+            'print_not_found': self.print_not_found_checkbox.isChecked(),
+            'print_errors': self.print_errors_checkbox.isChecked(),
+            'verbose': self.verbose_checkbox.isChecked(),
+            'info': self.info_checkbox.isChecked(),
+            'debug': self.debug_checkbox.isChecked(),
+        }
+
+        with open(file_path, 'w') as json_file:
+            json.dump(settings, json_file, indent=4)
+
+        self.output_area.append(f"Settings saved to {file_path}.")
+
+    def load_settings_dialog(self):
+        # Open a file dialog to load settings
+        file_path, _ = QFileDialog.getOpenFileName(self, "Load Settings", "", "JSON Files (*.json);;All Files (*)")
+
+        if file_path:
+            self.load_settings(file_path)
+
+    def load_settings(self, file_path):
+        try:
+            with open(file_path, 'r') as json_file:
+                settings = json.load(json_file)
+
+            self.username_input.setText(settings.get('username', ''))
+            self.timeout_spinbox.setValue(settings.get('timeout', 30))
+            self.retries_spinbox.setValue(settings.get('retries', 3))
+            self.max_connections_spinbox.setValue(settings.get('max_connections', 10))
+            self.no_recursion_checkbox.setChecked(settings.get('no_recursion', False))
+            self.no_extracting_checkbox.setChecked(settings.get('no_extracting', False))
+            self.id_type_combobox.setCurrentText(settings.get('id_type', 'username'))
+            self.permute_checkbox.setChecked(settings.get('permute', False))
+            self.proxy_input.setText(settings.get('proxy', ''))
+            self.tor_proxy_input.setText(settings.get('tor_proxy', ''))
+            self.i2p_proxy_input.setText(settings.get('i2p_proxy', ''))
+            self.all_sites_checkbox.setChecked(settings.get('all_sites', False))
+            self.top_sites_checkbox.setChecked(settings.get('top_sites', False))
+            self.top_sites_input.setValue(settings.get('top_sites_count', 10))
+            self.tags_input.setText(settings.get('tags', ''))
+            self.site_input.setText(settings.get('site', ''))
+            self.use_disabled_sites_checkbox.setChecked(settings.get('use_disabled_sites', False))
+            self.parse_url_input.setText(settings.get('parse_url', ''))
+            self.submit_url_input.setText(settings.get('submit_url', ''))
+            self.self_check_checkbox.setChecked(settings.get('self_check', False))
+            self.stats_checkbox.setChecked(settings.get('stats', False))
+            self.csv_checkbox.setChecked(settings.get('csv', False))
+            self.pdf_checkbox.setChecked(settings.get('pdf', False))
+            self.txt_checkbox.setChecked(settings.get('txt', False))
+            self.html_checkbox.setChecked(settings.get('html', False))
+            self.report_sorting_checkbox.setChecked(settings.get('report_sorting', False))
+            self.report_sorting_combobox.setCurrentText(settings.get('report_sorting_type', 'default'))
+            self.print_not_found_checkbox.setChecked(settings.get('print_not_found', False))
+            self.print_errors_checkbox.setChecked(settings.get('print_errors', False))
+            self.verbose_checkbox.setChecked(settings.get('verbose', False))
+            self.info_checkbox.setChecked(settings.get('info', False))
+            self.debug_checkbox.setChecked(settings.get('debug', False))
+
+            self.output_area.append(f"Settings loaded from {file_path}.")
+        except FileNotFoundError:
+            self.output_area.append("No settings file found.")
+        except json.JSONDecodeError:
+            self.output_area.append("Error decoding settings file.")
 
     def create_options_tab(self, tab_widget):
         options_group = QWidget()
