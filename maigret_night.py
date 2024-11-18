@@ -189,7 +189,7 @@ class MaigretGUI(QMainWindow):
         timeout_layout = QHBoxLayout()
         timeout_layout.addWidget(QLabel("Timeout (seconds):"))
         self.timeout_spinbox = QSpinBox()
-        self.timeout_spinbox.setRange(1, 300)
+        self.timeout_spinbox.setRange(15, 300)
         timeout_layout.addWidget(self.timeout_spinbox)
         options_layout.addLayout(timeout_layout)
 
