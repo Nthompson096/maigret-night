@@ -46,7 +46,6 @@ class MaigretGUI(QMainWindow):
         layout.addWidget(tab_widget)
 
         # Create tabs for different sections
-        self.create_input_tab(tab_widget)
         self.create_options_tab(tab_widget)
         self.create_proxy_tab(tab_widget)
         self.create_output_tab(tab_widget)
@@ -54,19 +53,21 @@ class MaigretGUI(QMainWindow):
         # Buttons and output area
         self.create_buttons(layout)
 
-    def create_input_tab(self, tab_widget):
-        input_group = QWidget()
-        input_layout = QFormLayout()
-        
-        self.username_input = QLineEdit()
-        input_layout.addRow("Username:", self.username_input)
-        
-        input_group.setLayout(input_layout)
-        tab_widget.addTab(input_group, "Input")
-
     def create_options_tab(self, tab_widget):
         options_group = QWidget()
         options_layout = QVBoxLayout()
+
+        # Create a horizontal layout for the Username and No Recursion checkbox
+        username_layout = QHBoxLayout()
+        
+        self.username_input = QLineEdit()
+        username_layout.addWidget(QLabel("Username:"))
+        username_layout.addWidget(self.username_input)
+
+        self.no_recursion_checkbox = QCheckBox("No Recursion")
+        username_layout.addWidget(self.no_recursion_checkbox)
+
+        options_layout.addLayout(username_layout)
 
         # Timeout input
         timeout_layout = QHBoxLayout()
@@ -80,8 +81,8 @@ class MaigretGUI(QMainWindow):
         retries_layout = QHBoxLayout()
         retries_layout.addWidget(QLabel("Retries:"))
         self.retries_spinbox = QSpinBox()
-        self.retries_spinbox.setRange(1, 10)
-        self.retries_spinbox.setValue(3)  # Default retries is 3
+        self.retries_spinbox.setRange(0, 10)
+        self.retries_spinbox.setValue(0)  # Default retries is 3
         retries_layout.addWidget(self.retries_spinbox)
         options_layout.addLayout(retries_layout)
 
@@ -94,18 +95,43 @@ class MaigretGUI(QMainWindow):
         max_connections_layout.addWidget(self.max_connections_spinbox)
         options_layout.addLayout(max_connections_layout)
 
-        # Other checkboxes
-        self.no_recursion_checkbox = QCheckBox("No Recursion")
-        options_layout.addWidget(self.no_recursion_checkbox)
+        # Create a horizontal layout for the checkboxes: No Extracting, Permute, All Sites
+        checkbox_layout_1 = QHBoxLayout()
 
         self.no_extracting_checkbox = QCheckBox("No Extracting")
-        options_layout.addWidget(self.no_extracting_checkbox)
+        checkbox_layout_1.addWidget(self.no_extracting_checkbox)
 
         self.permute_checkbox = QCheckBox("Permute")
-        options_layout.addWidget(self.permute_checkbox)
+        checkbox_layout_1.addWidget(self.permute_checkbox)
 
         self.all_sites_checkbox = QCheckBox("All Sites")
-        options_layout.addWidget(self.all_sites_checkbox)
+        checkbox_layout_1.addWidget(self.all_sites_checkbox)
+
+        options_layout.addLayout(checkbox_layout_1)
+
+        # Create a horizontal layout for the checkboxes: Self Check, Stats, Report Sorting
+        checkbox_layout_2 = QHBoxLayout()
+
+        self.self_check_checkbox = QCheckBox("Self Check")
+        checkbox_layout_2.addWidget(self.self_check_checkbox)
+
+        self.stats_checkbox = QCheckBox("Stats")
+        checkbox_layout_2.addWidget(self.stats_checkbox)
+
+        self.report_sorting_checkbox = QCheckBox("Enable Report Sorting")
+        checkbox_layout_2.addWidget(self.report_sorting_checkbox)
+
+        options_layout.addLayout(checkbox_layout_2)
+
+        # Report Sorting input (only enabled if checkbox is checked)
+        self.report_sorting_combobox = QComboBox()
+        self.report_sorting_combobox.addItems(["default", "data"])
+        self.report_sorting_combobox.setEnabled(False)  # Disable initially
+        options_layout.addWidget(QLabel("Report Sort:"))
+        options_layout.addWidget(self.report_sorting_combobox)
+
+        # Enable/Disable report sorting input based on checkbox state
+        self.report_sorting_checkbox.toggled.connect(self.toggle_report_sorting_input)
 
         # ID type combobox
         self.id_type_combobox = QComboBox()
@@ -152,29 +178,26 @@ class MaigretGUI(QMainWindow):
         options_layout.addWidget(QLabel("Submit URL:"))
         options_layout.addWidget(self.submit_url_input)
 
-        options_group.setLayout(options_layout)
-        tab_widget.addTab(options_group, "Options")
+        # Create a horizontal layout for the new checkboxes
+        additional_checkbox_layout = QHBoxLayout()
 
-        # Add missing checkboxes
-        self.self_check_checkbox = QCheckBox("Self Check")
-        options_layout.addWidget(self.self_check_checkbox)
+        self.print_not_found_checkbox = QCheckBox("Print Sites Not Found")
+        additional_checkbox_layout.addWidget(self.print_not_found_checkbox)
 
-        self.stats_checkbox = QCheckBox("Stats")
-        options_layout.addWidget(self.stats_checkbox)
+        self.print_errors_checkbox = QCheckBox("Print Errors")
+        additional_checkbox_layout.addWidget(self.print_errors_checkbox)
 
-        # Add Report Sorting checkbox
-        self.report_sorting_checkbox = QCheckBox("Enable Report Sorting")
-        options_layout.addWidget(self.report_sorting_checkbox)
+        self.verbose_checkbox = QCheckBox("Verbose (-v)")
+        additional_checkbox_layout.addWidget(self.verbose_checkbox)
 
-        # Report Sorting input (only enabled if checkbox is checked)
-        self.report_sorting_combobox = QComboBox()
-        self.report_sorting_combobox.addItems(["default", "data"])
-        self.report_sorting_combobox.setEnabled(False)  # Disable initially
-        options_layout.addWidget(QLabel("Report Sort:"))
-        options_layout.addWidget(self.report_sorting_combobox)
+        self.info_checkbox = QCheckBox("Info (-vv)")
+        additional_checkbox_layout.addWidget(self.info_checkbox)
 
-        # Enable/Disable report sorting input based on checkbox state
-        self.report_sorting_checkbox.toggled.connect(self.toggle_report_sorting_input)
+        self.debug_checkbox = QCheckBox("Debug (-vvv, -d)")
+        additional_checkbox_layout.addWidget(self.debug_checkbox)
+
+        # Add the horizontal layout of additional checkboxes to the main layout
+        options_layout.addLayout(additional_checkbox_layout)
 
         options_group.setLayout(options_layout)
         tab_widget.addTab(options_group, "Options")
@@ -295,6 +318,18 @@ class MaigretGUI(QMainWindow):
         if self.report_sorting_checkbox.isChecked():
             command += f" --reports-sorting {self.report_sorting_combobox.currentText()}"
 
+        # New flags for the additional options
+        if self.print_not_found_checkbox.isChecked():
+            command += " --print-not-found"
+        if self.print_errors_checkbox.isChecked():
+            command += " --print-errors"
+        if self.verbose_checkbox.isChecked():
+            command += " --verbose"
+        if self.info_checkbox.isChecked():
+            command += " --info"
+        if self.debug_checkbox.isChecked():
+            command += " --debug"
+        
         self.output_area.append(f"Running command: {command}")
 
         # Run the Maigret command in a separate thread
